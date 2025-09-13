@@ -1,0 +1,22 @@
+--- a/flang/lib/Decimal/decimal-to-binary.cpp
++++ b/flang/lib/Decimal/decimal-to-binary.cpp
+@@ -16,6 +16,8 @@
+ #include <ctype.h>
+ #include <utility>
+ 
++#undef HUGE
++
+ namespace Fortran::decimal {
+ 
+ template <int PREC, int LOG10RADIX>
+--- a/flang/lib/Decimal/big-radix-floating-point.h
++++ b/flang/lib/Decimal/big-radix-floating-point.h
+@@ -30,6 +30,8 @@
+ #include <limits>
+ #include <type_traits>
+ 
++#undef HUGE
++
+ namespace Fortran::decimal {
+ 
+ static constexpr std::uint64_t TenToThe(int power) {

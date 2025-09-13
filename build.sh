@@ -13,7 +13,7 @@ git config --global color.ui false
 mkdir -p llvm-toolchain && cd llvm-toolchain
 repo init -u https://android.googlesource.com/platform/manifest
 # Modified the manifest xml, to ensure only contain linux component
-sed -E 's/(^.*?(darwin|mingw|windows).*$)/<!-- \1 -->/g' ../manifest_12470979.xml > .repo/manifests/test.xml
+sed -E 's/(^.*?(darwin|mingw|windows).*$)/<!-- \1 -->/g' ../manifest_13624864.xml > .repo/manifests/test.xml
 repo init -m test.xml
 repo sync -c
 
@@ -21,7 +21,7 @@ repo sync -c
 # rm -rf .repo
 
 # Remove older version prebuilts
-rm -rf $(find prebuilts/clang/host/linux-x86/clang* -maxdepth 0 | grep -v "clang-r522817" | grep -v "clang-stable")
+rm -rf $(find prebuilts/clang/host/linux-x86/clang* -maxdepth 0 | grep -v "clang-r530567" | grep -v "clang-stable")
 
 # Patch to build mlir
 patch -p1 < ../build-mlir.patch
