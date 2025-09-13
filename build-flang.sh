@@ -3,11 +3,42 @@
 set -e -o pipefail -u
 
 : ${BUILD_ARCH_OR_TYPE:=host}
-: ${DEFAULT_ANDROID_API_LEVEL:=21}
-: ${ANDROID_NDK:=~/lib/android-ndk-r27c}
+: ${DEFAULT_ANDROID_API_LEVEL:=24}
 : ${FLANG_MAKE_PROCESSES:=1}
+: ${JAVA_HOME:=/usr/lib/jvm/java-17-openjdk-amd64}
 
+. $(cd "$(dirname "$0")"; pwd)/termux_download.sh
+
+# Setup Android NDK
+TERMUX_NDK_VERSION="28c"
+export ANDROID_NDK="$HOME/lib/android-ndk-r$TERMUX_NDK_VERSION"
+export NDK="$ANDROID_NDK"
+export TERMUX_PKG_TMPDIR="/tmp"
+ANDROID_NDK_FILE=android-ndk-r${TERMUX_NDK_VERSION}-linux.zip
+ANDROID_NDK_SHA256=dfb20d396df28ca02a8c708314b814a4d961dc9074f9a161932746f815aa552f
+if [ ! -d "$NDK" ]; then
+	mkdir -p "$NDK"
+	pushd "$NDK/.."
+	rm -Rf "$(basename "$NDK")"
+
+	# https://developer.android.com/ndk/downloads
+	echo "Downloading Android NDK..."
+	termux_download https://dl.google.com/android/repository/${ANDROID_NDK_FILE} \
+		ndk-r${TERMUX_NDK_VERSION}.zip \
+		$ANDROID_NDK_SHA256
+	rm -Rf android-ndk-r$TERMUX_NDK_VERSION
+	unzip -q ndk-r${TERMUX_NDK_VERSION}.zip
+
+	# Remove unused parts
+	rm -Rf android-ndk-r$TERMUX_NDK_VERSION/sources/cxx-stl/system
+	popd # termux-packages
+fi
+
+# Apply patches
 patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros-2.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-use-libandroid-math-complex.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-dummy-bessel-functions-for-long-double.patch
 
 ANDROID_TRIPLE="$BUILD_ARCH_OR_TYPE-linux-android"
 CC_HOST_PLATFORM=$BUILD_ARCH_OR_TYPE-linux-android$DEFAULT_ANDROID_API_LEVEL
