@@ -10,12 +10,12 @@ set -e -o pipefail -u
 . $(cd "$(dirname "$0")"; pwd)/termux_download.sh
 
 # Setup Android NDK
-TERMUX_NDK_VERSION="28c"
+TERMUX_NDK_VERSION="29"
 export ANDROID_NDK="$HOME/lib/android-ndk-r$TERMUX_NDK_VERSION"
 export NDK="$ANDROID_NDK"
 export TERMUX_PKG_TMPDIR="/tmp"
 ANDROID_NDK_FILE=android-ndk-r${TERMUX_NDK_VERSION}-linux.zip
-ANDROID_NDK_SHA256=dfb20d396df28ca02a8c708314b814a4d961dc9074f9a161932746f815aa552f
+ANDROID_NDK_SHA256=4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf
 if [ ! -d "$NDK" ]; then
 	mkdir -p "$NDK"
 	pushd "$NDK/.."

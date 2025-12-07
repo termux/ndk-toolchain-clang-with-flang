@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<manifest>
+  <contactinfo bugurl="go/repo-bug" />
+
+  <remote name="aosp" fetch="https://android.googlesource.com/" review="https://android.googlesource.com/" />
+
+  <default revision="llvm-r563880-release" remote="aosp" sync-j="4" />
+
+  <project path="toolchain/llvm-project" name="toolchain/llvm-project" revision="5e96669f06077099aa41290cdb4c5e6fa0f59349" upstream="llvm-r563880-release" />
+
+  <project path="toolchain/llvm_android" name="toolchain/llvm_android" revision="1dab3288f660d43a6cb2479107e2b54b3ab0a2a1" upstream="llvm-r563880-release" />
+
+  <project path="toolchain/common" name="toolchain/common" revision="0bce8b062126242872e9f3fc66760d3f76773c49" upstream="llvm-r563880-release" />
+
+  <project path="external/toolchain-utils" name="platform/external/toolchain-utils" revision="e4ed541c00706c0108c57921ac4b95ca98e87ec5" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8" name="platform/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8" clone-depth="1" revision="a127940854eda28ef583009f8d5fd886df2c669f" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8" name="platform/prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8" clone-depth="1" revision="a6c64a6502e0a89ee8ad3e3f8be97223a69e5bd7" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/cmake/darwin-x86" name="platform/prebuilts/cmake/darwin-x86" clone-depth="1" revision="7aea7e9880110799088cd1de509886871078306f" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/cmake/linux-x86" name="platform/prebuilts/cmake/linux-x86" clone-depth="1" revision="e57c88d59d7d8408a32b16425158fd2aa64e2b3e" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/build-tools" name="platform/prebuilts/build-tools" clone-depth="1" revision="33bb76fd08d10f224866f45e5b036da4b2973443" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/go/darwin-x86" name="platform/prebuilts/go/darwin-x86" groups="darwin,pdk,tradefed" clone-depth="1" revision="5a1ccbb7e1dda94e32b2e119d2c7c56e44fd232c" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/go/linux-x86" name="platform/prebuilts/go/linux-x86" groups="linux,pdk,tradefed" clone-depth="1" revision="ed0315e2a72296bd40e11edf5c112dec349ab5e1" upstream="llvm-r563880-release" />
+
+  <project path="external/zstd" name="platform/external/zstd" revision="7ce0c0484513223124cb8c4f036ebd7bd18a61f1" upstream="llvm-r563880-release" />
+
+  <project path="external/libedit" name="platform/external/libedit" revision="e05eb8459b1631dcb8d2ac71bca9f6ff3dc2d95a" upstream="llvm-r563880-release" />
+
+  <project path="external/swig" name="platform/external/swig" revision="dcabe60c35082d3beab79359d48093a23f0b09aa" upstream="llvm-r563880-release" />
+
+  <project path="toolchain/xz" name="toolchain/xz" revision="344ec8838064682d8803fa483bee7e4455cbddac" upstream="llvm-r563880-release" />
+
+  <project path="external/libxml2" name="platform/external/libxml2" revision="70aef28f676300c9c49c11a6922bb6a8d7701383" upstream="llvm-r563880-release" />
+
+  <project path="external/libncurses" name="platform/external/ncurses" revision="f52d90dc5f989e833e9d6168691b51a6e322f7ff" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/python/linux-x86" name="platform/prebuilts/python/linux-x86" clone-depth="1" revision="5284668c1c24547226f7b88fbe645e35839af267" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/python/darwin-x86" name="platform/prebuilts/python/darwin-x86" clone-depth="1" revision="47b8b56e08ce2e4b5f5d37bad84c8dd4ca604d70" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/python/windows-x86" name="platform/prebuilts/python/windows-x86" clone-depth="1" revision="b8d150ae7412b3375f4dcc7723d74315f2b9b0ec" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/clang/host/darwin-x86" name="platform/prebuilts/clang/host/darwin-x86" clone-depth="1" revision="c89b9c5bc6375ebab012e4f1135d53e3c80621f0" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/clang/host/linux-x86" name="platform/prebuilts/clang/host/linux-x86" clone-depth="1" revision="3795f4c8985f2c16f070561ad7d3ce8a318b43cb" upstream="llvm-r563880-release" />
+
+  <project path="prebuilts/clang/host/windows-x86" name="platform/prebuilts/clang/host/windows-x86" clone-depth="1" revision="c6208a1b217cc688adb1b7617ff3fde3ba769ea1" upstream="llvm-r563880-release" />
+
+  <project path="toolchain/prebuilts/ndk/releases" name="toolchain/prebuilts/ndk/releases" clone-depth="1" revision="70449f53a7e2767c41ad1ad6171ea8f9c239112d" upstream="llvm-r563880-release" />
+
+  <project path="tools/repohooks" name="platform/tools/repohooks" revision="2895b391eb6c83e54f98aabc4c09dc00c9e97c99" upstream="llvm-r563880-release" />
+
+  <repo-hooks in-project="platform/tools/repohooks" enabled-list="pre-upload" />
+</manifest>
