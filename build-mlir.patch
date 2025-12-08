@@ -1,5 +1,5 @@
---- a/toolchain/llvm_android/builders.py
-+++ b/toolchain/llvm_android/builders.py
+--- a/toolchain/llvm_android/src/llvm_android/builders.py
++++ b/toolchain/llvm_android/src/llvm_android/builders.py
 @@ -145,7 +145,7 @@
  
      @property

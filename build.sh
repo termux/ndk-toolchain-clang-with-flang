@@ -21,7 +21,7 @@ repo sync -c
 # rm -rf .repo
 
 # Remove older version prebuilts
-rm -rf $(find prebuilts/clang/host/linux-x86/clang* -maxdepth 0 | grep -v "clang-r563880" | grep -v "clang-stable")
+rm -rf $(find prebuilts/clang/host/linux-x86/clang* -maxdepth 0 | grep -v "clang-r547379" | grep -v "clang-stable")
 
 # Patch to build mlir
 patch -p1 < ../build-mlir.patch
