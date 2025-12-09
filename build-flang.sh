@@ -38,7 +38,9 @@ fi
 patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros.patch
 patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros-2.patch
 patch -p1 -d $(pwd)/out/llvm-project < flang-use-libandroid-math-complex.patch
-patch -p1 -d $(pwd)/out/llvm-project < flang-dummy-bessel-functions-for-long-double.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-fix-build-with-libcxx.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-fix-build-for-fortran-runtime.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-do-not-use-timespec_get.patch
 
 ANDROID_TRIPLE="$BUILD_ARCH_OR_TYPE-linux-android"
 CC_HOST_PLATFORM=$BUILD_ARCH_OR_TYPE-linux-android$DEFAULT_ANDROID_API_LEVEL
@@ -101,9 +103,10 @@ if [ "$BUILD_ARCH_OR_TYPE" != "host" ]; then
 	_CONFIGURE_ARGS+=("-DCMAKE_SYSTEM_VERSION=$DEFAULT_ANDROID_API_LEVEL")
 	_CONFIGURE_ARGS+=("-DCMAKE_ANDROID_NDK=$ANDROID_NDK")
 	_CONFIGURE_ARGS+=("-DCMAKE_SKIP_INSTALL_RPATH=ON")
+	_CONFIGURE_ARGS+=("-DBUILD_FLANG_RUNTIME_ONLY=ON")
 	echo "" > $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot/usr/include/zstd.h
 	echo "!<arch>" > $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot/usr/lib/$ANDROID_TRIPLE/libzstd.a
-	_BUILD_TARGET="Fortran_main FortranRuntime FortranDecimal"
+	_BUILD_TARGET="FortranRuntime FortranDecimal"
 else
 	export LD_LIBRARY_PATH="$(pwd)/out/stage2-install/lib:$(pwd)/out/stage2-install/lib/x86_64-unknown-linux-gnu:${LD_LIBRARY_PATH:-}"
 fi
