@@ -15,15 +15,7 @@ jobs:
     - name: Checkout Repo
       uses: actions/checkout@main
     - name: Free additional disk space
-      uses: jlumbroso/free-disk-space@main
-      with:
-        tool-cache: true
-        android: false
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: true
+      run: bash free-space.sh
     - name: Build Toolchain
       run: bash build.sh
     - name: Waiting for debugger
