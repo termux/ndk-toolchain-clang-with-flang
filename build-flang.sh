@@ -10,12 +10,12 @@ set -e -o pipefail -u
 . $(cd "$(dirname "$0")"; pwd)/termux_download.sh
 
 # Setup Android NDK
-TERMUX_NDK_VERSION="28c"
+TERMUX_NDK_VERSION="29"
 export ANDROID_NDK="$HOME/lib/android-ndk-r$TERMUX_NDK_VERSION"
 export NDK="$ANDROID_NDK"
 export TERMUX_PKG_TMPDIR="/tmp"
 ANDROID_NDK_FILE=android-ndk-r${TERMUX_NDK_VERSION}-linux.zip
-ANDROID_NDK_SHA256=dfb20d396df28ca02a8c708314b814a4d961dc9074f9a161932746f815aa552f
+ANDROID_NDK_SHA256=4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf
 if [ ! -d "$NDK" ]; then
 	mkdir -p "$NDK"
 	pushd "$NDK/.."
@@ -38,7 +38,9 @@ fi
 patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros.patch
 patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros-2.patch
 patch -p1 -d $(pwd)/out/llvm-project < flang-use-libandroid-math-complex.patch
-patch -p1 -d $(pwd)/out/llvm-project < flang-dummy-bessel-functions-for-long-double.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-fix-build-with-libcxx.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-fix-build-for-fortran-runtime.patch
+patch -p1 -d $(pwd)/out/llvm-project < flang-do-not-use-timespec_get.patch
 
 ANDROID_TRIPLE="$BUILD_ARCH_OR_TYPE-linux-android"
 CC_HOST_PLATFORM=$BUILD_ARCH_OR_TYPE-linux-android$DEFAULT_ANDROID_API_LEVEL
@@ -101,9 +103,10 @@ if [ "$BUILD_ARCH_OR_TYPE" != "host" ]; then
 	_CONFIGURE_ARGS+=("-DCMAKE_SYSTEM_VERSION=$DEFAULT_ANDROID_API_LEVEL")
 	_CONFIGURE_ARGS+=("-DCMAKE_ANDROID_NDK=$ANDROID_NDK")
 	_CONFIGURE_ARGS+=("-DCMAKE_SKIP_INSTALL_RPATH=ON")
+	_CONFIGURE_ARGS+=("-DBUILD_FLANG_RUNTIME_ONLY=ON")
 	echo "" > $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot/usr/include/zstd.h
 	echo "!<arch>" > $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot/usr/lib/$ANDROID_TRIPLE/libzstd.a
-	_BUILD_TARGET="Fortran_main FortranRuntime FortranDecimal"
+	_BUILD_TARGET="FortranRuntime FortranDecimal"
 else
 	export LD_LIBRARY_PATH="$(pwd)/out/stage2-install/lib:$(pwd)/out/stage2-install/lib/x86_64-unknown-linux-gnu:${LD_LIBRARY_PATH:-}"
 fi

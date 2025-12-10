@@ -1,0 +1,11 @@
+--- a/flang/runtime/CMakeLists.txt
++++ b/flang/runtime/CMakeLists.txt
+@@ -317,7 +317,7 @@
+ #
+ # TODO: This is a workaround and should be updated when runtime build procedure
+ # is changed to a regular runtime build.  See discussion in PR #95388.
+-if (TARGET flang AND TARGET module_files)
++if (TARGET flang AND TARGET module_files AND NOT BUILD_FLANG_RUNTIME_ONLY)
+   add_dependencies(FortranRuntime flang module_files)
+ endif()
+ 
