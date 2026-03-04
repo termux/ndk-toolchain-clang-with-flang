@@ -14,6 +14,14 @@ jobs:
     steps:
     - name: Checkout Repo
       uses: actions/checkout@main
+    - name: Enable zram
+      if: ${{ steps.build-info.outputs.skip-building != 'true' }}
+      uses: ./.github/actions/zram
+      with:
+        algorithm: zstd
+        size: 16G
+        priority: 100
+        device_name: /dev/zram0
     - name: Free additional disk space
       run: bash free-space.sh
     - name: Build Toolchain
