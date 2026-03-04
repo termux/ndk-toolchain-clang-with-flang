@@ -10,3 +10,6 @@ build-host/
 build-host-install/
 build-tblgen/
 out/
+
+# Generated on GitHub Actions CI when building kernel modules
+/scripts/*.ko.zst
