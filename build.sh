@@ -26,6 +26,9 @@ rm -rf $(find prebuilts/clang/host/linux-x86/clang* -maxdepth 0 | grep -v "clang
 # Patch to build mlir
 patch -p1 < ../build-mlir.patch
 
+# Patch to fix bug in P2280R4
+patch -p1 < ../bugfix-P2280R4.patch
+
 # Build
 pushd toolchain/llvm_android
 python build.py --no-build lldb,windows --no-musl --bootstrap-use-prebuilt --skip-tests --skip-runtimes

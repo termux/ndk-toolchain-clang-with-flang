@@ -1,0 +1,79 @@
+--- a/toolchain/llvm_android/patches/PATCHES.json
++++ b/toolchain/llvm_android/patches/PATCHES.json
+@@ -1078,5 +1078,19 @@
+             "from": 563880,
+             "until": null
+         }
++    },
++    {
++        "metadata": {
++            "info": [],
++            "title": "[UPSTREAM] [clang] Don't evaluate the initializer of constexpr-unknown parameters. (#142498)"
++        },
++        "platforms": [
++            "android"
++        ],
++        "rel_patch_path": "cherry/97885213bd4507b204b050c3cd570e365d21cc7d-v1.patch",
++        "version_range": {
++            "from": 563880,
++            "until": null
++        }
+     }
+ ]
+--- a/toolchain/llvm_android/patches/cherry/97885213bd4507b204b050c3cd570e365d21cc7d-v1.patch
++++ b/toolchain/llvm_android/patches/cherry/97885213bd4507b204b050c3cd570e365d21cc7d-v1.patch
+@@ -0,0 +1,54 @@
++From 97885213bd4507b204b050c3cd570e365d21cc7d Mon Sep 17 00:00:00 2001
++From: Eli Friedman <efriedma@quicinc.com>
++Date: Tue, 3 Jun 2025 09:51:37 -0700
++Subject: [PATCH] [clang] Don't evaluate the initializer of constexpr-unknown
++ parameters. (#142498)
++
++If we see a parameter of reference type that isn't part of the frame,
++don't try to evaluate its default argument. Just treat it as a
++constexpr-unknown value.
++
++Fixes #141114.  Fixes #141858.
++---
++ clang/lib/AST/ExprConstant.cpp                     |  7 ++++++-
++ clang/test/SemaCXX/constant-expression-p2280r4.cpp | 12 ++++++++++++
++ 2 files changed, 18 insertions(+), 1 deletion(-)
++
++diff --git a/clang/lib/AST/ExprConstant.cpp b/clang/lib/AST/ExprConstant.cpp
++index b20e2690d0eee..ab964e592de80 100644
++--- a/clang/lib/AST/ExprConstant.cpp
+++++ b/clang/lib/AST/ExprConstant.cpp
++@@ -3550,7 +3550,12 @@ static bool evaluateVarDeclInit(EvalInfo &Info, const Expr *E,
++   // should begin within the evaluation of E
++   // Used to be C++20 [expr.const]p5.12.2:
++   // ... its lifetime began within the evaluation of E;
++-  if (isa<ParmVarDecl>(VD) && !AllowConstexprUnknown) {
+++  if (isa<ParmVarDecl>(VD)) {
+++    if (AllowConstexprUnknown) {
+++      Result = &Info.CurrentCall->createConstexprUnknownAPValues(VD, Base);
+++      return true;
+++    }
+++
++     // Assume parameters of a potential constant expression are usable in
++     // constant expressions.
++     if (!Info.checkingPotentialConstantExpression() ||
++diff --git a/clang/test/SemaCXX/constant-expression-p2280r4.cpp b/clang/test/SemaCXX/constant-expression-p2280r4.cpp
++index c14250a268f6c..50637917ba210 100644
++--- a/clang/test/SemaCXX/constant-expression-p2280r4.cpp
+++++ b/clang/test/SemaCXX/constant-expression-p2280r4.cpp
++@@ -250,3 +250,15 @@ namespace uninit_reference_used {
++   // expected-note {{in call to 'g5()'}}
++ 
++ }
+++
+++namespace param_reference {
+++  constexpr int arbitrary = -12345;
+++  constexpr void f(const int &x = arbitrary) { // expected-note {{declared here}}
+++    constexpr const int &v1 = x; // expected-error {{must be initialized by a constant expression}} \
+++    // expected-note {{reference to 'x' is not a constant expression}}
+++    constexpr const int &v2 = (x, arbitrary); // expected-warning {{left operand of comma operator has no effect}}
+++    constexpr int v3 = x; // expected-error {{must be initialized by a constant expression}}
+++    static_assert(x==arbitrary); // expected-error {{static assertion expression is not an integral constant expression}}
+++    static_assert(&x - &x == 0);
+++  }
+++}
