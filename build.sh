@@ -13,7 +13,7 @@ git config --global color.ui false
 mkdir -p llvm-toolchain && cd llvm-toolchain
 repo init -u https://android.googlesource.com/platform/manifest
 # Modified the manifest xml, to ensure only contain linux component
-sed -E 's/(^.*?(darwin|mingw|windows).*$)/<!-- \1 -->/g' ../manifest_13989888.xml > .repo/manifests/test.xml
+sed -E 's/(^.*?(darwin|mingw|windows).*$)/<!-- \1 -->/g' ../manifest_16134705.xml > .repo/manifests/test.xml
 repo init -m test.xml
 repo sync -c
 
@@ -21,13 +21,10 @@ repo sync -c
 # rm -rf .repo
 
 # Remove older version prebuilts
-rm -rf $(find prebuilts/clang/host/linux-x86/clang* -maxdepth 0 | grep -v "clang-r547379" | grep -v "clang-stable")
+rm -rf $(find prebuilts/clang/host/linux-x86/clang* -maxdepth 0 | grep -v "clang-r563880" | grep -v "clang-stable")
 
 # Patch to build mlir
 patch -p1 < ../build-mlir.patch
-
-# Patch to fix bug in P2280R4
-patch -p1 < ../bugfix-P2280R4.patch
 
 # Build
 pushd toolchain/llvm_android
