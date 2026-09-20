@@ -1,5 +1,5 @@
---- a/flang/runtime/time-intrinsic.cpp
-+++ b/flang/runtime/time-intrinsic.cpp
+--- a/flang-rt/lib/runtime/time-intrinsic.cpp
++++ b/flang-rt/lib/runtime/time-intrinsic.cpp
 @@ -139,7 +139,7 @@
    }
  }

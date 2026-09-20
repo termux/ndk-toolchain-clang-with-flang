@@ -7,15 +7,17 @@ set -e -o pipefail -u
 : ${FLANG_MAKE_PROCESSES:=1}
 : ${JAVA_HOME:=/usr/lib/jvm/java-17-openjdk-amd64}
 
-. $(cd "$(dirname "$0")"; pwd)/termux_download.sh
+SCRIPT_DIR="$(cd "$(dirname "$0")"; pwd)"
+. "$SCRIPT_DIR"/termux_download.sh
 
 # Setup Android NDK
-TERMUX_NDK_VERSION="29"
+CLANG_VERSION_MAJOR="21"
+TERMUX_NDK_VERSION="30"
 export ANDROID_NDK="$HOME/lib/android-ndk-r$TERMUX_NDK_VERSION"
 export NDK="$ANDROID_NDK"
 export TERMUX_PKG_TMPDIR="/tmp"
 ANDROID_NDK_FILE=android-ndk-r${TERMUX_NDK_VERSION}-linux.zip
-ANDROID_NDK_SHA256=4abbbcdc842f3d4879206e9695d52709603e52dd68d3c1fff04b3b5e7a308ecf
+ANDROID_NDK_SHA256=753611f410d002cfcd3f3dc2ef49aad532089d3180b436c060a90bf0fcb64df2
 if [ ! -d "$NDK" ]; then
 	mkdir -p "$NDK"
 	pushd "$NDK/.."
@@ -35,12 +37,11 @@ if [ ! -d "$NDK" ]; then
 fi
 
 # Apply patches
-patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros.patch
-patch -p1 -d $(pwd)/out/llvm-project < flang-undef-macros-2.patch
-patch -p1 -d $(pwd)/out/llvm-project < flang-use-libandroid-math-complex.patch
-patch -p1 -d $(pwd)/out/llvm-project < flang-fix-build-with-libcxx.patch
-patch -p1 -d $(pwd)/out/llvm-project < flang-fix-build-for-fortran-runtime.patch
-patch -p1 -d $(pwd)/out/llvm-project < flang-do-not-use-timespec_get.patch
+patch -p1 -d $(pwd)/out/llvm-project < "$SCRIPT_DIR"/flang-undef-macros.patch
+patch -p1 -d $(pwd)/out/llvm-project < "$SCRIPT_DIR"/flang-undef-macros-2.patch
+patch -p1 -d $(pwd)/out/llvm-project < "$SCRIPT_DIR"/flang-use-libandroid-math-complex.patch
+patch -p1 -d $(pwd)/out/llvm-project < "$SCRIPT_DIR"/flang-do-not-use-timespec_get.patch
+patch -p1 -d $(pwd)/out/llvm-project < "$SCRIPT_DIR"/flang-cmake-modules-missing-include.patch
 
 ANDROID_TRIPLE="$BUILD_ARCH_OR_TYPE-linux-android"
 CC_HOST_PLATFORM=$BUILD_ARCH_OR_TYPE-linux-android$DEFAULT_ANDROID_API_LEVEL
@@ -55,6 +56,7 @@ fi
 mkdir -p build-tblgen
 pushd build-tblgen
 cmake -G Ninja "-DCMAKE_BUILD_TYPE=Release" \
+				"-DLLVM_TARGETS_TO_BUILD=AArch64;ARM;BPF;RISCV;WebAssembly;X86" \
 				"-DLLVM_ENABLE_PROJECTS=clang;mlir" \
 				$(pwd)/../out/llvm-project/llvm
 ninja -j $(nproc) clang-tblgen mlir-tblgen
@@ -84,31 +86,48 @@ _EXTRA_CONFIGURE_ARGS="
 "
 
 _CONFIGURE_ARGS=()
-_CONFIGURE_ARGS+=("-DCMAKE_C_COMPILER=$(pwd)/out/stage2-install/bin/clang")
-_CONFIGURE_ARGS+=("-DCMAKE_CXX_COMPILER=$(pwd)/out/stage2-install/bin/clang++")
-_CONFIGURE_ARGS+=("-DCMAKE_LINKER=$(pwd)/out/stage2-install/bin/ld.lld")
-_CONFIGURE_ARGS+=("-DCMAKE_CXX_FLAGS=-stdlib=libc++ -Wno-deprecated-copy")
-_CONFIGURE_ARGS+=("-DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++")
-_CONFIGURE_ARGS+=("-DCMAKE_INSTALL_RPATH=\$ORIGIN:\$ORIGIN/../lib/x86_64-unknown-linux-gnu:\$ORIGIN/../lib")
-
-_BUILD_TARGET=""
+_SRCDIR=""
 if [ "$BUILD_ARCH_OR_TYPE" != "host" ]; then
-	# TODO: Use the newly built toolchain
-	export NDK_STANDALONE_TOOLCHAIN_DIR="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64"
+	# Use the newly built toolchain
+	export NDK_STANDALONE_TOOLCHAIN_DIR="$(pwd)/out/flang-toolchain"
+	rm -rf $NDK_STANDALONE_TOOLCHAIN_DIR
+	mkdir -p $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot
+	cp -Rf $(pwd)/out/install/linux-x86/clang-dev/* $NDK_STANDALONE_TOOLCHAIN_DIR/
+	cp -Rf $(pwd)/build-host-install/* $NDK_STANDALONE_TOOLCHAIN_DIR/
+	cp -Rf $ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot/* $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot/
+	cat <<- EOF > "$NDK_STANDALONE_TOOLCHAIN_DIR/bin/${ANDROID_TRIPLE}-flang-new"
+	#!/usr/bin/env bash
+	if [[ "\$1" != "-cpp" && "\$1" != "-fc1" ]]; then
+		"$NDK_STANDALONE_TOOLCHAIN_DIR/bin/flang-new" --target="${ANDROID_TRIPLE}${DEFAULT_ANDROID_API_LEVEL}" -D__ANDROID_API__="$DEFAULT_ANDROID_API_LEVEL" "\$@"
+	else
+		# Target is already an argument.
+		"$NDK_STANDALONE_TOOLCHAIN_DIR/bin/flang-new" "\$@"
+	fi
+	EOF
+	chmod u+x "$NDK_STANDALONE_TOOLCHAIN_DIR/bin/${ANDROID_TRIPLE}-flang-new"
+
 	CMAKE_PROC=$BUILD_ARCH_OR_TYPE
 	test $CMAKE_PROC == "arm" && CMAKE_PROC='armv7-a'
 	test $CMAKE_PROC == "aarch64" && CMAKE_PROC='arm64-v8a'
-	_CONFIGURE_ARGS=("-DCMAKE_SYSTEM_NAME=Android")
+	_CONFIGURE_ARGS+=("-DCMAKE_SYSTEM_NAME=Android")
 	_CONFIGURE_ARGS+=("-DCMAKE_ANDROID_ARCH_ABI=$CMAKE_PROC")
 	_CONFIGURE_ARGS+=("-DCMAKE_SYSTEM_VERSION=$DEFAULT_ANDROID_API_LEVEL")
 	_CONFIGURE_ARGS+=("-DCMAKE_ANDROID_NDK=$ANDROID_NDK")
 	_CONFIGURE_ARGS+=("-DCMAKE_SKIP_INSTALL_RPATH=ON")
-	_CONFIGURE_ARGS+=("-DBUILD_FLANG_RUNTIME_ONLY=ON")
-	echo "" > $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot/usr/include/zstd.h
-	echo "!<arch>" > $NDK_STANDALONE_TOOLCHAIN_DIR/sysroot/usr/lib/$ANDROID_TRIPLE/libzstd.a
-	_BUILD_TARGET="FortranRuntime FortranDecimal"
+	_CONFIGURE_ARGS+=("-DCLANG_VERSION_MAJOR=$CLANG_VERSION_MAJOR")
+	_CONFIGURE_ARGS+=("-DLLVM_ENABLE_RUNTIMES=flang-rt")
+	_CONFIGURE_ARGS+=("-DCMAKE_Fortran_COMPILER=$NDK_STANDALONE_TOOLCHAIN_DIR/bin/${ANDROID_TRIPLE}-flang-new")
+	_CONFIGURE_ARGS+=("-DCMAKE_Fortran_COMPILER_WORKS=yes")
+	_SRCDIR="$(pwd)/out/llvm-project/runtimes"
 else
+	_CONFIGURE_ARGS+=("-DCMAKE_C_COMPILER=$(pwd)/out/stage2-install/bin/clang")
+	_CONFIGURE_ARGS+=("-DCMAKE_CXX_COMPILER=$(pwd)/out/stage2-install/bin/clang++")
+	_CONFIGURE_ARGS+=("-DCMAKE_LINKER=$(pwd)/out/stage2-install/bin/ld.lld")
+	_CONFIGURE_ARGS+=("-DCMAKE_CXX_FLAGS=-stdlib=libc++ -Wno-deprecated-copy")
+	_CONFIGURE_ARGS+=("-DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++")
+	_CONFIGURE_ARGS+=("-DCMAKE_INSTALL_RPATH=\$ORIGIN:\$ORIGIN/../lib/x86_64-unknown-linux-gnu:\$ORIGIN/../lib")
 	export LD_LIBRARY_PATH="$(pwd)/out/stage2-install/lib:$(pwd)/out/stage2-install/lib/x86_64-unknown-linux-gnu:${LD_LIBRARY_PATH:-}"
+	_SRCDIR="$(pwd)/out/llvm-project/flang"
 fi
 
 mkdir -p build-$BUILD_ARCH_OR_TYPE-install
@@ -120,12 +139,12 @@ cmake -G Ninja "${_CONFIGURE_ARGS[@]}" \
 				-DDOXYGEN_EXECUTABLE= \
 				-DBUILD_TESTING=OFF \
 				$_EXTRA_CONFIGURE_ARGS \
-				$(pwd)/../out/llvm-project/flang
-ninja -j $FLANG_MAKE_PROCESSES $_BUILD_TARGET
+				$_SRCDIR
+ninja -j $FLANG_MAKE_PROCESSES
 if [ "$BUILD_ARCH_OR_TYPE" == "host" ]; then
 	ninja -j $FLANG_MAKE_PROCESSES install
 else
-	cp lib/lib*.a $(pwd)/../build-$BUILD_ARCH_OR_TYPE-install/
+	cp flang-rt/lib/lib*.a $(pwd)/../build-$BUILD_ARCH_OR_TYPE-install/
 fi
 popd # build-$BUILD_ARCH_OR_TYPE
 
